@@ -6,8 +6,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-requires = ["wtforms",
-            #"jhi_tools"
+requires = ["sqlalchemy==0.7.9",
+            "pillow==1.7.7,"
     ]
 
 setup(name='onfo_octavius',

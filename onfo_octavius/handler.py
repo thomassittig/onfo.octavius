@@ -46,29 +46,23 @@ for image in image_handler:
     print image.original_filename
     print image.path_to_file
 
-
-
-
+# an AssetHandler has also it's own ident
+print image_handler.ident()
 """
 
 
 
 import StringIO
 import collections, logging, os, re
-from os import path
-import supersteiniwww.models as models
-import supersteiniwww.lib.common as co
-import transaction
-
-
 
 log = logging.getLogger(__name__)
 
 class AssetHandler(object):
-    def __init__(self, storage_engine):
-        pass
+    def __init__(self, master, storage_engine):
+        self._master = master
+        self._se = storage_engine
 
-    def update(self, stream):
+    def update(self):
         # check ident-duplications in all versions
         # iterate through versions
         # execute filters
@@ -83,13 +77,14 @@ class AssetManager(object):
         self.storage_engine = storage_engine
 
     def create(self, stream):
-        handler = self.handler_clazz(self.storage_engine)
-        handler.update(stream)
+        master_asset = self.storage_engine.store(stream)
+        handler = self.handler_clazz(master_asset, self.storage_engine)
+        handler.update()
         return handler
 
     def load(self, ident):
-        stream = self.storage_engine.load(ident)
-        return self.handler_clazz(stream, self.storage_engine)
+        master_asset = self.storage_engine.load(ident)
+        return self.handler_clazz(master_asset, self.storage_engine)
 
 
 

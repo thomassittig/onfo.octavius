@@ -80,13 +80,29 @@ if False:
 
 
 if True:
-    print "enum test"
-    from onfo_jhi_tools.jhi_tools import enum
 
-    class Test(enum.enumerated):
-        BAR = enum.enum()
-        FOO = enum.enum()
+    class Meta(object):
+        pass
+
+    class Base(object):
+        # __metaclass__ = Meta
+
+        foo = Meta()
+
+        pass
+
+    o = Base()
+
+    print o.foo
+    print Base.foo
+    print o.foo == Base.foo
+
+    o.foo = 1
+
+    print o.foo
+    print Base.foo
+    print o.foo == Base.foo
 
 
-    print Test.FOO.ordinal()
-    print Test.BAR.ordinal()
+
+
