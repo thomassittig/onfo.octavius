@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import onfo_octavius.handler as asset_handler
+import onfo.octavius.handler as asset_handler
 
 class AssetHandlerTest(unittest.TestCase):
     def setUp(self):
-        self.engine =
+        self.engine = None
 
     def tearDown(self):
         pass

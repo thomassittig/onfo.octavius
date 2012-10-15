@@ -30,6 +30,8 @@ Base = sqla_decl.declarative_base()
 
 log = logging.getLogger(__name__)
 
+# The Ident-object provides the required information for determining 
+# a unique, file-specific naming
 Ident = collections.namedtuple("Ident", ("id", "parent_id", "str1",))
 Credentials = collections.namedtuple("Credentials", ("storage_directory", "alchemy_session",))
 
@@ -78,16 +80,30 @@ class DefaultStorageEngine(object):
         self.storage_directory = credentials.storage_directory
         self.alchemy_session = credentials.alchemy_session
 
-    def store(self, stream, filename, mime_type, ident=Ident()):
+    def store(self, stream, filename, mime_type, ident=Ident(None, None, None)):
         log.info(u"register a asset to the database (filename=%s, mime_type=%s, ident=%s)" % (filename, mime_type, ident))
         data = Asset(filename, mime_type)
 
         with transaction.manager:
             self.alchemy_session.add(data)
 
-        filepath = determine_filepath(data.id, mime_type)
+        #filepath = determine_filepath(data.id, mime_type)
 
-        return FileInfo(Ident(data.id, data.parent_id, data.str1),)
+        return FileInfo(data)
 
     def load(self, ident):
-        pass
+        data = None
+        
+        if ident.id is None:
+            raise ValueError(u"ID-value can not be None (data=%s)"  % ident.id)
+        
+        with transaction.manager:
+            query = self.alchemy_session.query(Asset)
+            query = query.filter(Asset.id==ident.id)
+            
+            if query.count() == 1:
+                return FileInfo(query.first())
+            
+            log.info(u"no matching record could be found for the given ident (ident=%s)" % ident)
+        
+        return None

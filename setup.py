@@ -8,17 +8,15 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = ["sqlalchemy==0.7.9",
             "pillow==1.7.7,"
+            "zope.sqlalchemy",
     ]
 
 setup(name='onfo.octavius',
       version='0.1',
-      description='simple file asset management',
+      description=README,
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
         "Programming Language :: Python",
-        "Framework :: Pylons",
-        "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         ],
       author='',
       author_email='',

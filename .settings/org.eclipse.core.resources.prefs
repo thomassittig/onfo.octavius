@@ -1,0 +1,4 @@
+eclipse.preferences.version=1
+encoding//src/onfo/octavius/engines/default.py=utf-8
+encoding//tests/functional/test_asset_handler.py=utf-8
+encoding//tests/functional/test_default_storage_engine.py=utf-8

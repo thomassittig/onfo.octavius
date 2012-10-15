@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import unittest, StringIO
-import onfo_octavius.engines.default as se
+import onfo.octavius.engines.default as se
 
-from tests.functional import load_config
+from functional import load_config
 
 import sqlalchemy.orm as sqla_orm
 from zope.sqlalchemy import ZopeTransactionExtension
@@ -30,16 +30,29 @@ class DefaultStorageEngineTest(unittest.TestCase):
 
     def tearDown(self):
         self.dbsession.remove()
-
+        
+    def test_create_engine(self):
+        credentials = se.Credentials(None, None)
+        engine = se.DefaultStorageEngine(credentials)
+        
+        self.assertFalse(engine is None)
+        
 
     def test_store(self):
+        """ storing a string as file and expect a FileInfo-objekt
+        """
         stream = StringIO.StringIO("foo")
 
-        file = self.engine.store(stream, "foo.jpg")
+        file = self.engine.store(stream, u"foo.jpg", u"image/jpeg")
 
         self.assertFalse(file is None)
 
     def test_load(self):
+        """ load a already stored file by using a Ident-object as identifier
+        """
+        stream = StringIO.StringIO("foo")
+        stored = self.engine.store(stream, u"foo.jpg", u"image/jpeg")
+        
         ident = se.Ident(1, None, None)
         file = self.engine.load(ident)
 
