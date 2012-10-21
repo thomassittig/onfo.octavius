@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 Ident = collections.namedtuple("Ident", ("id", "parent_id", "str1",))
 Credentials = collections.namedtuple("Credentials", ("storage_directory", "alchemy_session",))
 
-def determine_filepath(int_key, str_key):
+def determine_filepath(id, mime_type):
     pass
 
 
@@ -63,6 +63,7 @@ class Asset(Base):
     parent_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     original_filename = sqlalchemy.Column(sqlalchemy.VARCHAR(255), nullable=False)
     mime_type = sqlalchemy.Column(sqlalchemy.VARCHAR(10), nullable=False)
+    int1 = sqlalchemy.Column(sqlalchemy.INTEGER(2), nullable=True)
     str1 = sqlalchemy.Column(sqlalchemy.VARCHAR(100), nullable=True)
     created_on = sqlalchemy.Column(sqlalchemy.DATETIME, nullable=False, default=datetime.datetime.utcnow)
     modified_on = sqlalchemy.Column(sqlalchemy.DATETIME, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
@@ -80,14 +81,15 @@ class DefaultStorageEngine(object):
         self.storage_directory = credentials.storage_directory
         self.alchemy_session = credentials.alchemy_session
 
-    def store(self, stream, filename, mime_type, ident=Ident(None, None, None)):
+    def store(self, stream, filename, mime_type, ident=Ident(None, None, None), str1=None, int1=None):
         log.info(u"register a asset to the database (filename=%s, mime_type=%s, ident=%s)" % (filename, mime_type, ident))
         data = Asset(filename, mime_type)
-
+        
+        if not str1 is None: data.str1 = str1
+        if not int1 is None: data.int1 = int1
+        
         with transaction.manager:
             self.alchemy_session.add(data)
-
-        #filepath = determine_filepath(data.id, mime_type)
 
         return FileInfo(data)
 

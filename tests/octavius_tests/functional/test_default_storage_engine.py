@@ -3,7 +3,7 @@
 import unittest, StringIO
 import onfo.octavius.engines.default as se
 
-from functional import load_config
+from octavius_tests import load_config
 
 import sqlalchemy.orm as sqla_orm
 from zope.sqlalchemy import ZopeTransactionExtension
@@ -18,15 +18,14 @@ class DefaultStorageEngineTest(unittest.TestCase):
     def setUp(self):
         from sqlalchemy import create_engine
 
-        conf = load_config().get("main", dict())
+        conf = load_config().get("functional", dict())
         self.dbsession = sqla_orm.scoped_session(sqla_orm.sessionmaker(extension=ZopeTransactionExtension(), expire_on_commit=False))
-        credentials = se.Credentials(conf.get("storage_directory"), self.dbsession)
-
-        self.engine = se.DefaultStorageEngine(credentials)
 
         dbengine = create_engine(conf.get(u"sqlite_conn_str"))
         initialize_sql(dbengine, self.dbsession)
 
+        credentials = se.Credentials(conf.get("storage_dir"), self.dbsession)
+        self.engine = se.DefaultStorageEngine(credentials)
 
     def tearDown(self):
         self.dbsession.remove()

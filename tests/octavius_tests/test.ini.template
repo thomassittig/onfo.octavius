@@ -1,0 +1,8 @@
+[functional]
+storage_dir=/path/the/functional/tests/asset/storage/directory
+sqlite_conn_str=sqlite:////path/to/functional/tests/database.db
+
+[integration]
+storage_dir=/path/the/integrational/tests/asset/storage/directory
+sqlite_conn_str=sqlite:////path/to/integrational/tests/database.db
+jpeg_image = /path/to/one/example/jpeg/file.jpg

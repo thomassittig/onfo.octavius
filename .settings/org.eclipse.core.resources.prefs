@@ -1,4 +1,12 @@
 eclipse.preferences.version=1
+encoding//src/onfo/octavius/__init__.py=utf-8
+encoding//src/onfo/octavius/engines/__init__.py=utf-8
 encoding//src/onfo/octavius/engines/default.py=utf-8
-encoding//tests/functional/test_asset_handler.py=utf-8
-encoding//tests/functional/test_default_storage_engine.py=utf-8
+encoding//src/onfo/octavius/filters.py=utf-8
+encoding//src/onfo/octavius/handler.py=utf-8
+encoding//tests/octavius_tests/__init__.py=utf-8
+encoding//tests/octavius_tests/functional/__init__.py=utf-8
+encoding//tests/octavius_tests/functional/test_asset_handler.py=utf-8
+encoding//tests/octavius_tests/functional/test_asset_manager.py=utf-8
+encoding//tests/octavius_tests/functional/test_default_storage_engine.py=utf-8
+encoding//tests/octavius_tests/integration/foolaround.py=utf-8
