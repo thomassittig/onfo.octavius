@@ -88,7 +88,10 @@ class AssetHandler(object):
         # execute filters
         # determine unique ident for each version
         # store resulting stream
-        pass
+        raise Exception("not implemented yet")
+    
+    def display_name(self):
+        raise Exception("not implemented yet")
     
     @property
     def ident(self):

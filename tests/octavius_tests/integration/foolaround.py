@@ -48,17 +48,11 @@ def _store_jpeg(config, manager):
     
     return manager.create(file_content, "foo.jpg", mime_type="image/jpeg")
 
-
-class TestImageExample(unittest.TestCase):
-    """ store and load an image file
+class AbstractImageTest(unittest.TestCase):
+    """ providing / initializing a default database for integration tests
     """
-    user_id = 1
-    credentials = None
-    stream = StringIO.StringIO("unspecific file content")
-    filename = "file.png"
-    mime_type = "image/png"
-
     def setUp(self):
+        super(AbstractImageTest, self).setUp()
         from sqlalchemy import create_engine
         import sqlalchemy.orm as sqla_orm
         from zope.sqlalchemy import ZopeTransactionExtension
@@ -71,19 +65,53 @@ class TestImageExample(unittest.TestCase):
 
         dbengine = create_engine(self.conf.get(u"sqlite_conn_str"))
         initialize_sql(dbengine, self.dbsession)
+
+    def tearDown(self):
+        self.dbsession.remove()
+    
+
+class TestImageExample(AbstractImageTest):
+    """ store and load an image file
+    """
+    #user_id = 1
+    #credentials = None
+    #stream = StringIO.StringIO("unspecific file content")
+    #filename = "file.png"
+    #mime_type = "image/png"
+
+    def setUp(self):
+        super(TestImageExample, self).setUp()
         
         credentials = se.Credentials(self.conf.get("storage_dir"), self.dbsession)
         self.engine = se.DefaultStorageEngine(credentials)
         self.manager = AssetManager(GalleryImage, self.engine)
 
-
-    def tearDown(self):
-        self.dbsession.remove()
-    
-    
     def test_create(self):
         stored_image = _store_jpeg(self.conf, self.manager)
         self.assertFalse(stored_image is None)
+        
+        self.assertFalse(stored_image.ident is None)
+        self.assertFalse(stored_image.display_name is None)
+        
+        file = stored_image.master.file
+        
+        self.assertFalse(file.original_filename is None)
+        self.assertFalse(file.path_to_file is None)
+        self.assertFalse(file.relative_path_to_file is None)
+
+        file = stored_image.thumbnail
+        
+        self.assertFalse(file.original_filename is None)
+        self.assertFalse(file.path_to_file is None)
+        self.assertFalse(file.relative_path_to_file is None)
+
+        file = stored_image.large
+        
+        self.assertFalse(file.original_filename is None)
+        self.assertFalse(file.path_to_file is None)
+        self.assertFalse(file.relative_path_to_file is None)
+        
+        
     
     def test_load(self):
         foo = _store_jpeg(self.conf, self.manager)
