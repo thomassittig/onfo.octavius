@@ -11,20 +11,11 @@
 import logging, collections, sqlalchemy, datetime, transaction
 
 import sqlalchemy.ext.declarative as sqla_decl
-
-#import declarative_base
-
 import sqlalchemy.orm as sqla_orm
-
-#from sqlalchemy.orm import (
-#    scoped_session,
-#    sessionmaker,
-#    relationship,
-#    )
-
 from zope.sqlalchemy import ZopeTransactionExtension
 
-#DBSession = sqla_orm.scoped_session(sqla_orm.sessionmaker(extension=ZopeTransactionExtension(), expire_on_commit=False))
+import onfo.octavius.handler as core_handler
+
 Base = sqla_decl.declarative_base()
 
 
@@ -35,26 +26,31 @@ log = logging.getLogger(__name__)
 Ident = collections.namedtuple("Ident", ("id", "parent_id", "str1",))
 Credentials = collections.namedtuple("Credentials", ("storage_directory", "alchemy_session",))
 
-def determine_filepath(id, mime_type):
-    pass
+def resolve_filepath(id, mime_type):
+    id = id
+    top_dir = "%02x" % (0xff & (id >> 8),)
+    sub_dir = "%02x" % (0xff & (id >> 16),)
+    file = "%012x%s" % ((0xff & id) | (id >> 24), core_handler.extension(mime_type))
+    return "/".join((top_dir, sub_dir, file,))
 
 
-class FileInfo(object):
-
-    ident = Ident(None, None, None)
-    original_filename = None
-    mime_type = None
-    path_to_file = None
-    full_path_to_file = None
-
-    def __init__(self, data):
+class FileInfo(core_handler.FileInfo):
+    """ FileInfo-Implementation for the DefaultStorageEngine
+    
+    all required file-infos will be provided by a sqlalchemy-dao
+    and the engine-credentials 
+    """
+    def __init__(self, data, storage_directory):
         self._data = data
+        self._storage_directory = storage_directory
 
         self.ident = Ident(data.id, data.parent_id, data.str1)
         self.original_filename = data.original_filename
         self.mime_type = data.mime_type
 
-        self.path_to_file = determine_filepath(data.id, data.mime_type)
+        self.path_to_file = resolve_filepath(data.id, data.mime_type)
+        
+        self.full_path_to_file = "/".join((self._storage_directory,self.path_to_file,))
 
 
 class Asset(Base):
@@ -90,8 +86,10 @@ class DefaultStorageEngine(object):
         
         with transaction.manager:
             self.alchemy_session.add(data)
-
-        return FileInfo(data)
+        
+        # TODO: save the file to the filesystem
+        
+        return FileInfo(data, self.storage_directory)
 
     def load(self, ident):
         data = None
@@ -104,7 +102,7 @@ class DefaultStorageEngine(object):
             query = query.filter(Asset.id==ident.id)
             
             if query.count() == 1:
-                return FileInfo(query.first())
+                return FileInfo(query.first(), self.storage_directory)
             
             log.info(u"no matching record could be found for the given ident (ident=%s)" % ident)
         

@@ -68,16 +68,17 @@ class AbstractImageTest(unittest.TestCase):
 
     def tearDown(self):
         self.dbsession.remove()
+        
+    def _default_asset_tests(self, asset):
+        self.assertFalse(asset.original_filename is None)
+        self.assertFalse(asset.path_to_file is None)
+        self.assertFalse(asset.full_path_to_file is None)
+
     
 
 class TestImageExample(AbstractImageTest):
     """ store and load an image file
     """
-    #user_id = 1
-    #credentials = None
-    #stream = StringIO.StringIO("unspecific file content")
-    #filename = "file.png"
-    #mime_type = "image/png"
 
     def setUp(self):
         super(TestImageExample, self).setUp()
@@ -94,24 +95,13 @@ class TestImageExample(AbstractImageTest):
         self.assertFalse(stored_image.display_name is None)
         
         file = stored_image.master.file
-        
-        self.assertFalse(file.original_filename is None)
-        self.assertFalse(file.path_to_file is None)
-        self.assertFalse(file.relative_path_to_file is None)
+        self._default_asset_tests(file)
 
-        file = stored_image.thumbnail
+        file = stored_image.thumbnail.file
+        self._default_asset_tests(file)
         
-        self.assertFalse(file.original_filename is None)
-        self.assertFalse(file.path_to_file is None)
-        self.assertFalse(file.relative_path_to_file is None)
-
-        file = stored_image.large
-        
-        self.assertFalse(file.original_filename is None)
-        self.assertFalse(file.path_to_file is None)
-        self.assertFalse(file.relative_path_to_file is None)
-        
-        
+        file = stored_image.large.file
+        self._default_asset_tests(file)
     
     def test_load(self):
         foo = _store_jpeg(self.conf, self.manager)
@@ -119,79 +109,113 @@ class TestImageExample(AbstractImageTest):
         stored_image = self.manager.load(foo.ident)
         
         self.assertFalse(stored_image is None)
+        
+        file = stored_image.master.file
+        self._default_asset_tests(file)
+        
+        file = stored_image.thumbnail.file
+        self._default_asset_tests(file)
 
 
 
-class TestPdfExample(unittest.TestCase):
+class TestPdfExample(AbstractImageTest):
     """ store and load an pdf-file
     the difference to the image-file example is, that this filetype has no
     special versions to consider
     """
+    
+    def setUp(self):
+        super(TestPdfExample, self).setUp()
+        
+        credentials = se.Credentials(self.conf.get("storage_dir"), self.dbsession)
+        self.engine = se.DefaultStorageEngine(credentials)
+        self.manager = AssetManager(PdfFile, self.engine)
 
+    def test_create(self):
+        stored_image = _store_jpeg(self.conf, self.manager)
+        self.assertFalse(stored_image is None)
+        
+        self.assertFalse(stored_image.ident is None)
+        self.assertFalse(stored_image.display_name is None)
+        
+        file = stored_image.master.file
+        self._default_asset_tests(file)
 
-if False:
-    # image asset
-    
-    image_handler = GalleryImage(stream, filename, mime_type)
-    image_handler = manager.create(stream, filename, mime_type)
-    
-    #builder  = GalleryImage()
-    #builder.thumbnail.filters.add(Watermark(StreamIO))
-    
-    #engine = StorageEngine(credentials, user_id)
-    #manager = AssetManager.create(builder, engine)
-    #handler = manager.create(StreamIO, display_name)
-    
-    print image_handler.ident()
-    print image_handler.display_name
-    
-    # the original, never touched file
-    print image_handler.master.original_filename
-    print image_handler.master.path_to_file
-    
-    thumbnail = image_handler.thumbnail
-    print thumbnail.original_filename
-    print thumbnail.path_to_file
-    print thumbnail.relative_path_to_file
-    
-    handler = manager.load(image_handler.ident())
-    
-    # simple file management
-    engine = DefaultStorageEngine(credentials, user_id)
-    manager = AssetManager.create(GalleryImage, engine)
-    
-    file_handler = manager.create(stream, filename, mime_type)
-    print file_handler.ident()
-    print file_handler.master.original_filename
-    
-    
-    # upload print asset of image or zip type
-    engine = DefaultStorageEngine(credentials, user_id)
-    manager = AssetManager.create(PrintDropbox, engine)
-    
-    handler = manager.create_new(stream, filename)
+    def test_load(self):
+        foo = _store_jpeg(self.conf, self.manager)
+        
+        stored_image = self.manager.load(foo.ident)
+        
+        self.assertFalse(stored_image is None)
+        
+        file = stored_image.master.file
+        self._default_asset_tests(file)
+        
+#if False:
+#    # image asset
+#    
+#    image_handler = GalleryImage(stream, filename, mime_type)
+#    image_handler = manager.create(stream, filename, mime_type)
+#    
+#    #builder  = GalleryImage()
+#    #builder.thumbnail.filters.add(Watermark(StreamIO))
+#    
+#    #engine = StorageEngine(credentials, user_id)
+#    #manager = AssetManager.create(builder, engine)
+#    #handler = manager.create(StreamIO, display_name)
+#    
+#    print image_handler.ident()
+#    print image_handler.display_name
+#    
+#    # the original, never touched file
+#    print image_handler.master.original_filename
+#    print image_handler.master.path_to_file
+#    
+#    thumbnail = image_handler.thumbnail
+#    print thumbnail.original_filename
+#    print thumbnail.path_to_file
+#    print thumbnail.full_path_to_file
+#    
+#    handler = manager.load(image_handler.ident())
+#    
+#    # simple file management
+#    engine = DefaultStorageEngine(credentials, user_id)
+#    manager = AssetManager.create(GalleryImage, engine)
+#    
+#    file_handler = manager.create(stream, filename, mime_type)
+#    print file_handler.ident()
+#    print file_handler.master.original_filename
+#    
+#    
+#    # upload print asset of image or zip type
+#    engine = DefaultStorageEngine(credentials, user_id)
+#    manager = AssetManager.create(PrintDropbox, engine)
+#    
+#    handler = manager.create_new(stream, filename)
 
-if False:
-    # an experimantal sample for implementing / using produced assets
-    # in an sortable collection-structure
-    # handle collections
-    manager = CollectionManager()
-    collection = manager.create(display_name)
-    collection.add(handler,0, "description")
-    collection.add(handler,1)
-    collection.add(handler,2, "description")
-    collection.add((handler,handler,handler,))
+if __name__ == "__main__":
+
+    if False:
+        # an experimantal sample for implementing / using produced assets
+        # in an sortable collection-structure
+        # handle collections
+        manager = CollectionManager()
+        collection = manager.create(display_name)
+        collection.add(handler,0, "description")
+        collection.add(handler,1)
+        collection.add(handler,2, "description")
+        collection.add((handler,handler,handler,))
+        
+        field1 = collection.add_field(label, description, index)
+        field2 = collection.add_field(label, description, index)
+        
+        collection.update_fields((field1,field2,))
+        collection.update_fields((field2,field1,)) #reverse ordering
+        
+        fields = collection.fields
+        print fields.totalCount
+        print fields.entries
     
-    field1 = collection.add_field(label, description, index)
-    field2 = collection.add_field(label, description, index)
     
-    collection.update_fields((field1,field2,))
-    collection.update_fields((field2,field1,)) #reverse ordering
     
-    fields = collection.fields
-    print fields.totalCount
-    print fields.entries
-
-
-
-
+    
