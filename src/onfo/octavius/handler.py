@@ -137,11 +137,28 @@ class FileInfo(object):
                                                                                                                      self.path_to_file, 
                                                                                                                      self.full_path_to_file)
 
+class Unbound(object):
+    def __init__(self, *args, **kvargs):
+        pass
+
+class FileVersionFactory(type):
+     def __new__(cls, name, bases, foo):
+         
+         print "__mro__", cls.__mro__
+         print "cls: ", cls
+         print "name: ", name
+         print "bases: ", bases
+         print "foo: ", foo
+         print "dict(foo): ", dict(foo)
+         return Unbound()
+
 class FileVersion(object):
     """ FileVersion´s are templates which define how byte-data should be with proceeded
     The real byte/file-informations are accessable through the file()-method
     """
     _allowed_ = None
+    
+    __metaclass__ = FileVersionFactory
     
 #    def __call__(self, file_info):
 #        """ initializing a file-version with the matching FileInfo 
@@ -278,44 +295,4 @@ class AssetManager(object):
 
 
 if __name__ == "__main__":
-    
-    class Value(object):
-        
-        def key(self, klazz):
-            for k,v in klazz.__dict__.iteritems():
-                if v is self: return "__%s_%s" % (self.__class__, k)
-            
-            raise Exception(u"a instance of this class could not be found")
-            
-        
-        def __set__(self, instance, value):
-            instance.__dict__[self.key(instance.__class__)] = value
-        
-        def __get__(self, instance, owner):
-            return instance.__dict__.get(self.key(owner))
-        
-        def update(self, value):
-            self = value
-    
-    class MetaValueHandler(type):
-        def __new__(mcs, name, bases, dict):
-            print "mcs, name, bases, dict: ", mcs, name, bases, dict
-        
-    
-    class ValueHandler(object):
-        __metaclass__ = MetaValueHandler
-    
-    class Collection(object):
-        foo = ValueHandler()
-        bar = ValueHandler()
-            
-
-    o1 = Collection(1,2)
-    o2 = Collection()
-    
-    
-    print "start"
-    
-    o = ValueHandler()
-        
-        
+    o = AssetHandler(None, None)
