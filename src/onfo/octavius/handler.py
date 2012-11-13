@@ -112,7 +112,10 @@ class FileAccessHandler:
         self.pointer.close()
 
 class FileInfo(object):
-
+    """ Abstract base class for all file info
+    every storage-engine should implement a version of this for it's own use
+    """
+    
     ident = None
     original_filename = None
     mime_type = None
@@ -137,6 +140,18 @@ class FileInfo(object):
                                                                                                                      self.path_to_file, 
                                                                                                                      self.full_path_to_file)
 
+class Unbound(object):
+    _args = None
+    _kvargs = None
+    
+    def __init__(self, version_clazz, *args, **kwargs):
+        self._version_clazz = version_clazz
+        self._args = args
+        self._kwargs = kwargs
+    
+    def bind(self, instance):
+        return self._version_clazz(bind_to=instance, *self._args, **dict(self._kwargs))
+
 class FileVersion(object):
     """ FileVersion´s are templates which define how byte-data should be with proceeded
     The real byte/file-informations are accessable through the file()-method
@@ -147,7 +162,14 @@ class FileVersion(object):
 #        """ initializing a file-version with the matching FileInfo 
 #        """
 #        self._file_info = file_info
-        
+    def __new__(cls, *args, **kwargs):
+        if "bind_to" in kwargs.keys():
+            return super(FileVersion, cls).__new__(cls)
+        else:
+            return Unbound(cls, *args, **kwargs)
+
+    def __init__(self, bind_to=None):
+        self.instance = bind_to
     
     def update(self, engine, source_info):
         """ creating a copy of the file-data, specified in source_info and create a new version of it
@@ -162,44 +184,11 @@ class FileVersion(object):
             
         self.file = engine.store(file_content, source_info.original_filename, source_info.mime_type)
     
-    def __get__(self, instance, clazz):
-        indexer = self.__resolve_indexer(instance)
-        
-        if not indexer in instance.__dict__.keys():
-            instance.__dict__[indexer] = None
-        
-        return instance.__dict__[indexer]
-            
-    def __set__(self, instance, value):
-        
-        if not isinstance(value, FileInfo):
-            raise ValueError(u"jus object of type FileInfo are allowed")
-        
-        indexer = self.__resolve_indexer(instance)
-        instance.__dict__[indexer] = value
-        
-    
-    def __resolve_indexer(self, instance):
-        
-        print "_resolve: ", dir(instance)
-        
-        for k,v in instance.__dict__.iteritems():
-            print "v: ", v, self
-            if v is self: return self.indexer(k)
-        
-        raise Exception(u"THIS object is not a part of the given instance")
-        
-
-    def __indexer(self, name):
-        return u"__{%s}" % name
-    
     @property
     def file(self):
         """ returns the real physical representation of the current file-version
         """
         return self._file_info
-
-
 
 class Image(FileVersion):
     """ Image is a superset of FileVersion, which contains a unmutable range of accepted filetypes
@@ -208,29 +197,42 @@ class Image(FileVersion):
         super(Image, self).__init__()
         self._allowed_ = (filt.Jpeg(), filt.Gif(), filt.Png(),)
 
+class Glue(object):
+    
+    def __init__(self, reference_key, unbound):
+        self._reference_key = reference_key
+        self._unbound = unbound
+    
+    def __get__(self, instance, owner):
+        if instance is None: return self._unbound
+        if not self._reference_key in instance.__dict__.keys():
+            instance.__dict__[self._reference_key] = self._unbound.bind(instance)
+            
+        return instance.__dict__.get(self._reference_key)
+
+class MetaAssetHandler(type):
+    def __new__(cls, name, bases, cdict):
+        """ creating bound instances of currently unbound FileVersion-objects into the new instance of this class
+        """
+        ndict = dict(cdict)
+        
+        for k,v in cdict.iteritems():
+            if isinstance(v, Unbound):
+                ndict[k] = Glue(u"__%s_%s" % (name,k), v)
+        
+        self = type.__new__(cls, name, bases, ndict)
+        return self
+
 class AssetHandler(object):
     
     master = FileVersion()
     
-    __bindings = None
+    __metaclass__ = MetaAssetHandler
     
-    def __init__(self, master, storage_engine):
-        self.master(storage_engine, master)
+    def __init__(self, storage_engine, master):
+        #self.master.update(storage_engine, master)
         self._se = storage_engine
         self.__bindings = dict()
-        
-        # init versions
-        for k,v in self.__dict__.iteritems():
-            element = self.__dict__.get(k)
-            if isinstance(element, FileVersion):
-                self.__bindings[k] = element
-            
-        
-    def __getattr__(self, name):
-        if name in self.__bindings.keys():
-            return self.__bindings.get(name)
-        
-        return self.__dict__.get(name)
         
     @property
     def display_name(self):
@@ -256,8 +258,9 @@ class AssetHandler(object):
         # execute filters
         # determine unique ident for each version
         # store resulting stream
-        for k,file_version in self.__bindings.iteritems():
-            file_version.update(self._se, self.master.file)
+#        for k,file_version in self.__bindings.iteritems():
+#            file_version.update(self._se, self.master.file)
+        pass
 
 
 
@@ -279,43 +282,29 @@ class AssetManager(object):
 
 if __name__ == "__main__":
     
-    class Value(object):
-        
-        def key(self, klazz):
-            for k,v in klazz.__dict__.iteritems():
-                if v is self: return "__%s_%s" % (self.__class__, k)
-            
-            raise Exception(u"a instance of this class could not be found")
-            
-        
-        def __set__(self, instance, value):
-            instance.__dict__[self.key(instance.__class__)] = value
-        
-        def __get__(self, instance, owner):
-            return instance.__dict__.get(self.key(owner))
-        
-        def update(self, value):
-            self = value
+    master = FileInfo()
     
-    class MetaValueHandler(type):
-        def __new__(mcs, name, bases, dict):
-            print "mcs, name, bases, dict: ", mcs, name, bases, dict
-        
+    class Image(AssetHandler):
+        default = FileVersion()
+        large = FileVersion()
     
-    class ValueHandler(object):
-        __metaclass__ = MetaValueHandler
+    print Image.master
+    print Image.default
     
-    class Collection(object):
-        foo = ValueHandler()
-        bar = ValueHandler()
-            
+    handler1 = Image(None, master)
+    handler2 = Image(None, master)
+    
+    print  "handler1 is handler 2 (master)", handler1.master is handler2.master
+    print  "handler1 is handler 2 (default)", handler1.default is handler2.default
+    
+    print "handler1: ", handler1.master,  
+    print "handler1: ", handler1.default
+    print "handler2: ", handler2.master
+    print "handler2: ", handler2.default
+    
+    
+    
+    
 
-    o1 = Collection(1,2)
-    o2 = Collection()
-    
-    
-    print "start"
-    
-    o = ValueHandler()
         
         
