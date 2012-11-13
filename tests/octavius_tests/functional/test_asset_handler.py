@@ -13,8 +13,5 @@ class AssetHandlerTest(unittest.TestCase):
     def test_default_instantiation(self):
         pass
 
-
-
-
     def test_update_versions(self):
         pass

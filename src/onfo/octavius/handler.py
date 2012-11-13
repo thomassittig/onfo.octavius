@@ -170,6 +170,7 @@ class FileVersion(object):
 
     def __init__(self, bind_to=None):
         self.instance = bind_to
+        self._file_info = None
     
     def update(self, engine, source_info):
         """ creating a copy of the file-data, specified in source_info and create a new version of it
@@ -182,7 +183,7 @@ class FileVersion(object):
         with source_info.file_handler() as iostream:
             file_content = iostream.read()
             
-        self.file = engine.store(file_content, source_info.original_filename, source_info.mime_type)
+        self._file_info = engine.store(file_content, source_info.original_filename, source_info.mime_type)
     
     @property
     def file(self):
@@ -193,8 +194,8 @@ class FileVersion(object):
 class Image(FileVersion):
     """ Image is a superset of FileVersion, which contains a unmutable range of accepted filetypes
     """
-    def __init__(self, filters=None):
-        super(Image, self).__init__()
+    def __init__(self, filters=None, *args, **kwargs):
+        super(Image, self).__init__(*args, **kwargs)
         self._allowed_ = (filt.Jpeg(), filt.Gif(), filt.Png(),)
 
 class Glue(object):
@@ -230,7 +231,7 @@ class AssetHandler(object):
     __metaclass__ = MetaAssetHandler
     
     def __init__(self, storage_engine, master):
-        #self.master.update(storage_engine, master)
+        self.master.update(storage_engine, master)
         self._se = storage_engine
         self.__bindings = dict()
         
@@ -271,13 +272,13 @@ class AssetManager(object):
 
     def create(self, file_content, filename, mime_type=None):
         file_info = self.storage_engine.store(file_content, filename, mime_type)
-        handler = self.handler_clazz(file_info, self.storage_engine)
+        handler = self.handler_clazz(self.storage_engine, file_info)
         handler.update()
         return handler
 
     def load(self, ident):
         master_asset = self.storage_engine.load(ident)
-        return self.handler_clazz(master_asset, self.storage_engine)
+        return self.handler_clazz(self.storage_engine, master_asset)
 
 
 if __name__ == "__main__":
