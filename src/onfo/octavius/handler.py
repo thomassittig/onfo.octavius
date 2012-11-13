@@ -216,25 +216,28 @@ class MetaAssetHandler(type):
         """ creating bound instances of currently unbound FileVersion-objects into the new instance of this class
         """
         ndict = dict(cdict)
+        bindings = dict()
+        
         
         for k,v in cdict.iteritems():
             if isinstance(v, Unbound):
-                ndict[k] = Glue(u"__%s_%s" % (name,k), v)
+                
+                glue = Glue(u"__%s_%s" % (name,k), v)
+                bindings[k] = ndict[k] = glue
         
+        ndict["__bindings"] = bindings
         self = type.__new__(cls, name, bases, ndict)
         return self
 
 class AssetHandler(object):
-    
-    master = FileVersion()
-    
     __metaclass__ = MetaAssetHandler
     
+    master = FileVersion()
+
     def __init__(self, storage_engine, master):
         self.master.update(storage_engine, master)
         self._se = storage_engine
-        self.__bindings = dict()
-        
+    
     @property
     def display_name(self):
         raise Exception("not implemented yet")
